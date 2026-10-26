@@ -1,0 +1,18 @@
+# openai-codex-image：ChatGPT（Codex OAuth）授权 + 生图插件
+#
+# 只插入一个 Host 插件行。config 全部可省略，代码里有同样的默认值：
+#   authFile       读取 Codex CLI 登录的路径（默认 ~/.codex/auth.json）
+#   hostModel      承载 image_generation 工具的对话模型（默认 gpt-6.1-sol）
+#   imageModel     生图模型（默认 gpt-image-2）
+#   defaultSize    默认出图尺寸（默认 1024x1024）
+#   outputDir      默认输出目录，相对会话工作目录或绝对路径（默认 generated_images）
+#   timeoutMs      单次生图请求超时毫秒（默认 240000）
+- insert:
+    - id: openai-codex-image
+      name: 'openai-codex-image'
+      config:
+        hostModel: gpt-6.1-sol
+        imageModel: gpt-image-2
+        defaultSize: 1024x1024
+        outputDir: generated_images
+        timeoutMs: 240000

@@ -1,0 +1,57 @@
+{
+  "name": "openai-codex-image",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DSH plugin: sign in with a ChatGPT account (Codex OAuth) and generate images with the subscription quota instead of a paid API key.",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "scripts/smoke.mjs",
+    "README.md",
+    "README.zh.md",
+    "LICENSE",
+    "SECURITY.md"
+  ],
+  "scripts": {
+    "check": "node --check index.js",
+    "test": "node scripts/smoke.mjs"
+  },
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kkczx5428/dsh-openai-codex-image.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kkczx5428/dsh-openai-codex-image/issues"
+  },
+  "homepage": "https://github.com/kkczx5428/dsh-openai-codex-image#readme",
+  "author": "kkczx5428",
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "dsh-plugin",
+    "chatgpt",
+    "openai",
+    "codex",
+    "oauth",
+    "image-generation",
+    "gpt-image-2"
+  ],
+  "license": "MIT"
+}

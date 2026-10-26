@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "ChatGPT 生图",
+    "description": "用 ChatGPT 账号（Codex OAuth）授权，消耗订阅额度生成图片，不走付费 API Key。"
+  }
+}
