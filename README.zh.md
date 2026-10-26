@@ -146,6 +146,8 @@ node --check index.js   # 语法检查
 node scripts/smoke.mjs  # 离线冒烟测试：工具注册与 schema，无网络请求
 ```
 
+`dsh.client` + `./client` 导出是设置页能被加载的条件。**`exports` 里必须包含 `"./package.json": "./package.json"`**：DSH 的客户端模块扫描通过 `require.resolve("<包名>/package.json")` 找包清单，缺这个子路径导出时扫描会静默跳过该包——宿主工具正常，但设置页永远不出现。
+
 目录结构：
 
 ```

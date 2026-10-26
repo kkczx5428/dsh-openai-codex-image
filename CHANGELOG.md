@@ -12,6 +12,9 @@
   trust fence when mounted, with a structural loopback same-origin fallback.
 - CI: syntax-check `client.js` and exercise the Web API routes, trust fence and
   manifest in the offline smoke test.
+- Fix: export `./package.json` from `package.json`; DSH's client-module scan
+  resolves a bundle manifest through that subpath and silently skips a package
+  without it (the settings page would never appear).
 - Client bundles load when the host starts, so a new or changed settings page
   requires a DSH restart.
 

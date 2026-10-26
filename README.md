@@ -144,6 +144,8 @@ node --check index.js   # syntax
 node scripts/smoke.mjs  # registration/schema smoke test, no network
 ```
 
+`dsh.client` + `./client` export are what make the Settings page load. **`exports` must include `"./package.json": "./package.json"`**: DSH's client-module scan locates a bundle's manifest through `require.resolve("<package>/package.json")`, and without that subpath export the scan silently skips the package — the host half and tools work, but the settings page never appears.
+
 Layout:
 
 ```
