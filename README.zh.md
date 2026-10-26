@@ -151,7 +151,7 @@ scripts/smoke.mjs   # 离线冒烟测试
 generated/          # 本地测试输出（git 忽略）
 ```
 
-已验证：在 Windows 上通过 ChatGPT 订阅账号真实出图、`generate_image` 返回内联图片、按尺寸出图，以及上表错误路径。设备码登录的最后一步（浏览器登录 → `login_poll`）需要真人完成，CI 未覆盖。
+已在 Windows 上端到端验证（2026-10-26）：通过 ChatGPT 订阅账号真实出图、`generate_image` 返回内联图片、按尺寸与质量档位出图、上表错误路径，以及完整的设备码登录链路（`login_start` → 浏览器登录 → `login_poll` → 凭据写入 DSH → 用这份插件内授权出图）。CI 只覆盖离线冒烟测试，联网与账号流程需要真实账号。
 
 ## 安全说明
 

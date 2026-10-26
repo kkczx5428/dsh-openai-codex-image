@@ -149,7 +149,7 @@ scripts/smoke.mjs   # offline smoke test
 generated/          # local test output (git-ignored)
 ```
 
-Verified so far: real image generation through a ChatGPT subscription on Windows, `generate_image` returning an inline image, sized output, and the error paths above. The final step of the device-code login (browser login → `login_poll`) requires a human and has not been exercised end-to-end in CI.
+Verified end-to-end on Windows (2026-10-26): real image generation through a ChatGPT subscription account, inline image results, sized and quality-controlled output, the error paths above, and the full device-code login (`login_start` → browser login → `login_poll` → credential stored in DSH → generation using that stored credential). CI covers the offline smoke test only; network and account flows need a real account.
 
 ## Security
 
