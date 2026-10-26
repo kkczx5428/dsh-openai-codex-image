@@ -31,6 +31,7 @@ Both images were generated with `generate_image` through a ChatGPT subscription 
 
 - `generate_image` tool: prompt → PNG file in your workspace, displayed inline in chat when the active model accepts image input.
 - `openai_account` tool: status / device-code login / poll / logout.
+- **Settings → ChatGPT Image** page: authorization status (source, account, plan, token expiry), the device-code login flow, sign-out, and the current image defaults — the same-origin routes never return tokens.
 - Auth resolution: plugin-owned OAuth record in DSH credentials first, then the local Codex CLI login (`~/.codex/auth.json`, **read-only**).
 - Automatic token refresh for the plugin-owned record (refreshed tokens are written back to the same DSH credential record).
 - No hard dependency on `@deepseek-ai/*` packages: the plugin only uses Node built-ins and the services on the DSH context, so it works as a locally installed bundle.
@@ -101,6 +102,12 @@ Device-code flow:
 3. `openai_account(action="login_poll")` → `authorized`;
 4. `generate_image` now uses that authorization.
 
+### Settings page
+
+DSH → Settings → **ChatGPT Image** shows the current authorization source, account, plan and token expiry, starts the device-code login, confirms it, and signs the plugin-owned credential out. It reads the plugin's own same-origin routes under `/api/openai-codex-image/*`; the page receives no tokens (the account id is masked).
+
+The page is the browser half of the bundle (`client.js`). Client bundles load when the host starts, so **restart DSH Desktop after installing or upgrading this plugin** to see a new or changed settings page.
+
 ## Authentication sources
 
 1. **Plugin credential** — DSH credential record `openai-image/chatgpt` (`kind: "grant"`, payload `{ type: "oauth", access, refresh, expires, accountId, ... }`). Refreshed automatically 60 seconds before expiry; refreshed tokens replace the same record.
@@ -128,6 +135,7 @@ All keys are optional and live in the bundle's `cordis.patch.yml` row config:
 | `HTTP 429` | Rate or quota limit; wait for the subscription quota to reset. |
 | Timeout | Raise `timeoutMs`; typical generations take 20–60 s, larger sizes longer. |
 | Image not shown inline | The active model does not accept image input; the PNG is still saved at `path`. |
+| Settings page missing after install/upgrade | Client bundles load at host start; restart DSH Desktop. |
 
 ## Development
 
@@ -140,12 +148,13 @@ Layout:
 
 ```
 index.js            # all plugin logic (Host half, Node built-ins only)
+client.js           # Settings page (browser half, hand-written ModuleLoader bundle)
 cordis.patch.yml    # inserts the openai-codex-image row
-package.json        # dsh.bundle.patch -> cordis.patch.yml
+package.json        # dsh.bundle.patch -> cordis.patch.yml; dsh.client -> client.js
 locale/en.json      # plugin manager title/description
 locale/zh.json
 icon.svg            # original SVG icon
-scripts/smoke.mjs   # offline smoke test
+scripts/smoke.mjs   # offline smoke test (tools, manifest, Web API routes)
 generated/          # local test output (git-ignored)
 ```
 

@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.1.0 — 2026-10-26
+
+- Add a Web settings page (`client.js`) registered as a `settings.section`
+  ("ChatGPT Image"): authorization status (source / account / plan / expiry),
+  device-code login, confirmation, sign-out, and the current image defaults.
+  Localized in English and Chinese, styled with theme variables.
+- Host: same-origin JSON routes under `/api/openai-codex-image/*`
+  (`status`, `login/start`, `login/poll`, `logout`). They never return tokens —
+  the account id is masked. Every request goes through the harness `connection`
+  trust fence when mounted, with a structural loopback same-origin fallback.
+- CI: syntax-check `client.js` and exercise the Web API routes, trust fence and
+  manifest in the offline smoke test.
+- Client bundles load when the host starts, so a new or changed settings page
+  requires a DSH restart.
+
 ## 1.0.1 — 2026-10-26
 
 - Verified the full device-code login end to end: `login_start` → browser login →

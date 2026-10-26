@@ -17,6 +17,8 @@ jobs:
         with:
           node-version: 22
       - name: Syntax check
-        run: node --check index.js
+        run: |
+          node --check index.js
+          node --check client.js
       - name: Offline smoke test
         run: node scripts/smoke.mjs

@@ -69,17 +69,122 @@ export function apply(ctx, config) {
   const cfg = normalizeConfig(config)
   /** 当前进程里正在等待用户完成的设备码授权。 */
   let pendingLogin
+  const pending = {
+    getPending: () => pendingLogin,
+    setPending: (next) => {
+      pendingLogin = next
+    },
+  }
 
   ctx.tools.register(createGenerateImageTool(ctx, cfg))
-  ctx.tools.register(
-    createAccountTool(ctx, cfg, {
-      getPending: () => pendingLogin,
-      setPending: (next) => {
-        pendingLogin = next
-      },
-    }),
-  )
-  ctx.logger?.info?.('openai-codex-image: 已注册 generate_image 与 openai_account 工具')
+  ctx.tools.register(createAccountTool(ctx, cfg, pending))
+  registerWebApi(ctx, cfg, pending)
+  ctx.logger?.info?.('openai-codex-image v1.1.0: 已注册 generate_image、openai_account 与 Web API')
+}
+
+/**
+ * 给插件自己的设置页（client.js）提供同源 JSON 路由。
+ *
+ * 只暴露状态与授权流程，从不返回 token：状态里账号 ID 已打码，email/档位是
+ * 界面上要显示的信息。路由挂在 /api/openai-codex-image 前缀下；因为插件前缀
+ * 比内核 `/api` 更长、会先命中，所以必须自己做与内核一致的信任校验。
+ * @param ctx - 插件上下文
+ * @param cfg - 归一化后的配置
+ * @param pending - 设备码登录的共享状态（与 openai_account 工具共用）
+ */
+function registerWebApi(ctx, cfg, pending) {
+  ctx.inject(['webServer'], (scoped) => {
+    scoped.effect(
+      () =>
+        scoped.webServer.register({
+          kind: 'prefix',
+          path: '/api/openai-codex-image',
+          handler: (req, res) => handleWebApi(ctx, cfg, pending, req, res),
+        }),
+      'openai-codex-image: /api routes',
+    )
+  })
+}
+
+async function handleWebApi(ctx, cfg, pending, req, res) {
+  const send = (status, payload) => {
+    if (res.headersSent) return
+    res.statusCode = status
+    res.setHeader('content-type', 'application/json; charset=utf-8')
+    res.setHeader('cache-control', 'no-store')
+    res.end(JSON.stringify(payload))
+  }
+  const rejection = rejectionFor(req, ctx.get('connection'))
+  if (rejection !== undefined) {
+    return send(rejection, {
+      error: rejection === 401 ? 'unauthorized' : rejection === 503 ? 'admission unavailable' : 'forbidden',
+    })
+  }
+  const suffix = (() => {
+    try {
+      return new URL(req.url ?? '/', 'http://localhost').pathname.slice('/api/openai-codex-image'.length) || '/'
+    } catch {
+      return '/'
+    }
+  })()
+  try {
+    if (suffix === '/status' && req.method === 'GET') return send(200, await accountStatus(ctx, cfg))
+    if (suffix === '/login/start' && req.method === 'POST') return send(200, await loginStart(pending))
+    if (suffix === '/login/poll' && req.method === 'POST') return send(200, await loginPoll(ctx, cfg, pending))
+    if (suffix === '/logout' && req.method === 'POST') return send(200, await logout(ctx))
+    if (['/status', '/login/start', '/login/poll', '/logout'].includes(suffix)) {
+      return send(405, { error: `method ${req.method} is not allowed for ${suffix}` })
+    }
+    send(404, { error: 'not found' })
+  } catch (error) {
+    send(400, { error: error instanceof Error ? error.message : String(error) })
+  }
+}
+
+/**
+ * 与内核 `/api` 一致的信任校验：有 `connection` 服务时直接用它的判断
+ * （浏览器 cookie / 本机信任）；没有时退回结构化检查，只允许本机同源请求。
+ * @param req - Node 请求
+ * @param connection - 可选的 connection 服务
+ * @returns 拒绝状态码，或 undefined（放行）
+ */
+function rejectionFor(req, connection) {
+  if (connection && typeof connection.requestRejection === 'function') {
+    try {
+      const status = connection.requestRejection({ headers: req.headers })
+      return status === undefined ? undefined : status
+    } catch {
+      return 503
+    }
+  }
+  return structuralRejection(req)
+}
+
+const LOOPBACK_HOSTS = new Set(['127.0.0.1', '[::1]', '::1', 'localhost'])
+
+function structuralRejection(req) {
+  const authority = parseAuthority(req.headers.host, 'http')
+  if (!authority || !LOOPBACK_HOSTS.has(authority.hostname)) return 403
+  if (String(req.headers['sec-fetch-site'] ?? '').toLowerCase() === 'cross-site') return 403
+  for (const header of ['origin', 'referer']) {
+    const raw = req.headers[header]
+    if (typeof raw !== 'string' || raw.trim() === '') continue
+    const source = parseAuthority(raw.trim())
+    if (!source || source.hostname !== authority.hostname || source.port !== authority.port) return 403
+  }
+  return undefined
+}
+
+function parseAuthority(value, defaultScheme = 'http') {
+  if (typeof value !== 'string' || value.trim() === '') return undefined
+  try {
+    const url = new URL(value.includes('://') ? value.trim() : `${defaultScheme}://${value.trim()}`)
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return undefined
+    const port = url.port === '' ? (url.protocol === 'https:' ? '443' : '80') : url.port
+    return { hostname: url.hostname.toLowerCase(), port }
+  } catch {
+    return undefined
+  }
 }
 
 /** 归一化配置，坏值回落到默认值。 */
@@ -130,7 +235,7 @@ function createGenerateImageTool(ctx, cfg) {
     description:
       '用已授权的 ChatGPT 账号（Codex OAuth，消耗 ChatGPT 订阅额度）生成一张图片，保存为工作区里的 PNG 文件。' +
       '默认尺寸 1024x1024，默认模型 gpt-image-2。当前对话模型支持图片输入时，图片会内联显示；否则只返回文件路径。' +
-      '未授权时先用 openai_account 工具完成授权。',
+      '未授权时先用 openai_account 工具完成授权，或在「设置 → ChatGPT 生图」页面里完成。',
     parameters: {
       type: 'object',
       additionalProperties: false,

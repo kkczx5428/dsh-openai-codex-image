@@ -30,6 +30,7 @@ POST https://chatgpt.com/backend-api/codex/responses
 
 - `generate_image` 工具：prompt → 工作区里的 PNG 文件；当前模型支持图片输入时在对话中内联显示。
 - `openai_account` 工具：查看状态 / 设备码登录 / 确认登录 / 退出授权。
+- 「设置 → ChatGPT 生图」页面：授权状态（来源、账号、档位、token 到期时间）、设备码登录流程、退出授权，以及当前生图默认参数；页面走插件自己的同源路由，不接触 token。
 - 授权优先级：插件自己保存在 DSH 凭据里的 OAuth 记录优先，其次只读复用本机 Codex CLI 的 `~/.codex/auth.json`。
 - 插件内授权快到期时自动用 refresh token 刷新，并把新 token 写回同一条凭据记录。
 - 不 import 任何 `@deepseek-ai/*` 包，只依赖 Node 内置模块与 `ctx` 上的服务，因此可以作为本地 bundle 直接安装。
@@ -100,6 +101,12 @@ generate_image(prompt="...", size="1536x1024", quality="low", output_dir="素材
 3. `openai_account(action="login_poll")` → `authorized`；
 4. 之后 `generate_image` 就使用这份授权。
 
+### 设置页
+
+DSH → 设置 → **ChatGPT 生图**：查看当前授权来源、账号、档位和 token 到期时间，发起设备码登录、确认授权、退出插件内授权。页面读取插件自己的同源路由 `/api/openai-codex-image/*`，不拿 token（账号 ID 已打码）。
+
+这个页面是 bundle 的浏览器半边（`client.js`）。客户端 bundle 在宿主启动时加载，所以**安装或升级本插件后要重启 DSH Desktop** 才能看到新的设置页。
+
 ## 授权来源
 
 1. **插件内授权**：DSH 凭据记录 `openai-image/chatgpt`（`kind: "grant"`，payload 为
@@ -130,6 +137,7 @@ generate_image(prompt="...", size="1536x1024", quality="low", output_dir="素材
 | `HTTP 429` | 触发频率或额度限制，等待订阅额度重置 |
 | 超时 | 调大 `timeoutMs`；普通生图约 20–60 秒，大尺寸更久 |
 | 图片没有内联显示 | 当前模型不接受图片输入；PNG 仍保存在 `path` |
+| 安装/升级后看不到设置页 | 客户端 bundle 在宿主启动时加载，重启 DSH Desktop |
 
 ## 开发
 
@@ -142,12 +150,13 @@ node scripts/smoke.mjs  # 离线冒烟测试：工具注册与 schema，无网�
 
 ```
 index.js            # 插件全部逻辑（Host 半边，只用 Node 内置模块）
+client.js           # 设置页（浏览器半边，手写 ModuleLoader bundle）
 cordis.patch.yml    # 插入 openai-codex-image 行
-package.json        # dsh.bundle.patch 指向 cordis.patch.yml
+package.json        # dsh.bundle.patch 指向 cordis.patch.yml；dsh.client 指向 client.js
 locale/en.json      # 插件管理器的标题/描述
 locale/zh.json
 icon.svg            # 原创 SVG 图标
-scripts/smoke.mjs   # 离线冒烟测试
+scripts/smoke.mjs   # 离线冒烟测试（工具、manifest、Web API 路由）
 generated/          # 本地测试输出（git 忽略）
 ```
 
