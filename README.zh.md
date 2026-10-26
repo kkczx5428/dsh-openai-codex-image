@@ -18,6 +18,14 @@ POST https://chatgpt.com/backend-api/codex/responses
 
 > 这是对 Codex CLI 所用端点的非官方集成，与 OpenAI 无关联，端点可能随时变化。请自行确认使用方式符合你账号适用的条款。
 
+## 效果示例
+
+下面两张都是用 `generate_image` 通过 ChatGPT 订阅账号真实生成的：
+
+| 请求 `1024x1024`（实际 1312x1199） | 请求 `1536x1024` + `quality=low`（实际 1672x941） |
+|---|---|
+| ![戴圆框眼镜用笔记本电脑的小熊猫](docs/demo/red-panda.webp) | ![黄昏灯塔极简插画](docs/demo/lighthouse.webp) |
+
 ## 功能
 
 - `generate_image` 工具：prompt → 工作区里的 PNG 文件；当前模型支持图片输入时在对话中内联显示。

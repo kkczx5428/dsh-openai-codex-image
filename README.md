@@ -19,6 +19,14 @@ POST https://chatgpt.com/backend-api/codex/responses
 
 > This is an unofficial integration of a Codex CLI endpoint. It is not affiliated with OpenAI, and OpenAI may change the endpoint at any time. Make sure using it complies with the terms that apply to your account.
 
+## Demo
+
+Both images were generated with `generate_image` through a ChatGPT subscription account:
+
+| `1024x1024` request (actual 1312x1199) | `1536x1024` + `quality=low` (actual 1672x941) |
+|---|---|
+| ![A red panda with round glasses using a laptop](docs/demo/red-panda.webp) | ![Minimalist lighthouse at dusk](docs/demo/lighthouse.webp) |
+
 ## Features
 
 - `generate_image` tool: prompt → PNG file in your workspace, displayed inline in chat when the active model accepts image input.
